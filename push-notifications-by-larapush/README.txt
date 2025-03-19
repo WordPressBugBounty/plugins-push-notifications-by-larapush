@@ -4,8 +4,8 @@ Donate link: [LaraPush.com](https://larapush.com/ "Self hosted Push Notification
 Tags: larapush, push notifications, self hosted, unlimited subscribers, AMP, web push notifications
 Requires at least: 4.7
 Requires PHP: 7.0
-Tested up to: 6.5
-Stable tag: 1.0.5
+Tested up to: 6.7.1
+Stable tag: 1.0.6
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,14 @@ Yes, you can easily integrate "Unlimited Push Notifications By LaraPush" with yo
 However you will need to have a larapush pro panel installed on your server.
 
 == Changelog ==
+
+= 1.0.6 =
+* Now Compatible with LaraPush Premium
+* Push on publish will have an added delay option
+* Masked Password for Admin Panel
+
+= 1.0.5 =
+* Added "Who can send notifications" option for more security
 
 = 1.0.4 =
 * Enabled Code Integration for Startup Versions

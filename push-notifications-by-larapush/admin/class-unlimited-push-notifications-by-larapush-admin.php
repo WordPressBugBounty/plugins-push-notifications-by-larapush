@@ -214,8 +214,28 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
             Unlimited_Push_Notifications_By_Larapush_Admin_Helper::responseErrorAndRedirect('Invalid panel email.');
         }
 
-        // Check if panel password is valid
-        if (empty(sanitize_text_field($_POST['unlimited_push_notifications_by_larapush_panel_password']))) {
+        // Get the input password and check if it's masked
+        $input_password = sanitize_text_field($_POST['unlimited_push_notifications_by_larapush_panel_password']);
+        $password_length = isset($_POST['unlimited_push_notifications_by_larapush_panel_password_length'])
+            ? intval($_POST['unlimited_push_notifications_by_larapush_panel_password_length'])
+            : 0;
+
+        // Get existing password from the database
+        $existing_password_encoded = get_option('unlimited_push_notifications_by_larapush_panel_password', '');
+        $existing_password = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::decode($existing_password_encoded);
+
+        // Check if the password is masked (all asterisks and matches the length of stored password)
+        if (
+            !empty($input_password) &&
+            preg_match('/^\*+$/', $input_password) &&
+            strlen($input_password) === $password_length
+        ) {
+            // If it's masked and length matches, use the existing password
+            $input_password = $existing_password;
+        }
+
+        // Check if we have a valid password
+        if (empty($input_password)) {
             Unlimited_Push_Notifications_By_Larapush_Admin_Helper::responseErrorAndRedirect('Invalid panel password.');
         }
 
@@ -252,22 +272,34 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
         );
         update_option(
             'unlimited_push_notifications_by_larapush_panel_password',
-            Unlimited_Push_Notifications_By_Larapush_Admin_Helper::encode(
-                sanitize_text_field($_POST['unlimited_push_notifications_by_larapush_panel_password'])
-            )
+            Unlimited_Push_Notifications_By_Larapush_Admin_Helper::encode($input_password)
         );
         update_option(
             'unlimited_push_notifications_by_larapush_enable_push_notifications',
             isset($_POST['unlimited_push_notifications_by_larapush_enable_push_notifications']) ? 1 : 0
         );
-        update_option(
-            'unlimited_push_notifications_by_larapush_push_on_publish',
-            isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish']) ? 1 : 0
-        );
-        update_option(
-            'unlimited_push_notifications_by_larapush_push_on_publish_for_webstories',
-            isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish_for_webstories']) ? 1 : 0
-        );
+
+        if (!Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPushOnPublishDelay()) {
+            // If user doesn't have access, force these options to be disabled
+            update_option('unlimited_push_notifications_by_larapush_push_on_publish', 0);
+            update_option('unlimited_push_notifications_by_larapush_push_on_publish_delay', 0);
+            update_option('unlimited_push_notifications_by_larapush_push_on_publish_for_webstories', 0);
+        } else {
+            update_option(
+                'unlimited_push_notifications_by_larapush_push_on_publish',
+                isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish']) ? 1 : 0
+            );
+            update_option(
+                'unlimited_push_notifications_by_larapush_push_on_publish_delay',
+                isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish_delay'])
+                    ? sanitize_text_field($_POST['unlimited_push_notifications_by_larapush_push_on_publish_delay'])
+                    : 0
+            );
+            update_option(
+                'unlimited_push_notifications_by_larapush_push_on_publish_for_webstories',
+                isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish_for_webstories']) ? 1 : 0
+            );
+        }
 
         if (get_option('unlimited_push_notifications_by_larapush_panel_integration_tried', false) == true) {
             // Array of Domains come from Select tag
@@ -353,10 +385,25 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
             return;
         }
 
+        if (!Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPushOnPublishDelay()) {
+            return;
+        }
+
         if ($new_status == 'publish') {
             if ($post->post_type == 'post') {
                 if (get_option('unlimited_push_notifications_by_larapush_push_on_publish', false)) {
-                    $notification = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::send_notification($post->ID);
+                    $delay = get_option('unlimited_push_notifications_by_larapush_push_on_publish_delay', 0);
+                    if ($delay > 0) {
+                        wp_schedule_single_event(
+                            time() + $delay * 60,
+                            'unlimited_push_notifications_by_larapush_send_scheduled_notification',
+                            [$post->ID]
+                        );
+                    } else {
+                        $notification = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::send_notification(
+                            $post->ID
+                        );
+                    }
                 }
             }
             if ($post->post_type == 'web-story') {
@@ -365,6 +412,16 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
                 }
             }
         }
+    }
+
+    /**
+     * Send Scheduled Notification
+     *
+     * @since 1.0.6
+     */
+    public function send_scheduled_notification($post_id)
+    {
+        $notification = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::send_notification($post_id);
     }
 
     /**
@@ -382,8 +439,8 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
         }
 
         if ($post->post_type == 'post' or $post->post_type == 'web-story') {
-            $plan = get_option('unlimited_push_notifications_by_larapush_panel_plan', 'pro');
-            if ($plan == 'pro') {
+            $plan = get_option('unlimited_push_notifications_by_larapush_panel_plan', 'premium');
+            if ($plan == 'pro' || $plan == 'premium') {
                 $actions['send_notification'] =
                     '<a href="#" class="larapush_send_notification" data-post-id="' .
                     $post->ID .

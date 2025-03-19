@@ -209,11 +209,17 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
                 return false;
             }
 
-            // dump and die the response
+            // Store both plan and version
             if (isset($body->plan)) {
                 update_option('unlimited_push_notifications_by_larapush_panel_plan', $body->plan);
             } else {
-                update_option('unlimited_push_notifications_by_larapush_panel_plan', 'pro');
+                update_option('unlimited_push_notifications_by_larapush_panel_plan', 'premium');
+            }
+
+            if (isset($body->version)) {
+                update_option('unlimited_push_notifications_by_larapush_panel_version', $body->version);
+            } else {
+                update_option('unlimited_push_notifications_by_larapush_panel_version', '1.0.0');
             }
 
             return true;
@@ -493,6 +499,12 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
      */
     public static function send_notification($postId)
     {
+        // Check if post is published
+        $post = get_post($postId);
+        if ($post->post_status != 'publish') {
+            return false;
+        }
+
         // get post meta
         $meta = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::get_meta($postId);
 
@@ -695,5 +707,20 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
         $description = implode(' ', array_slice($description, 0, 14));
 
         return $description;
+    }
+
+    /**
+     * Checks if the user can show the push on publish delay
+     *
+     * @return bool
+     *
+     * @since 1.0.6
+     */
+    public static function canShowPushOnPublishDelay()
+    {
+        $plan = get_option('unlimited_push_notifications_by_larapush_panel_plan', '');
+        $version = get_option('unlimited_push_notifications_by_larapush_panel_version', '1.0.0');
+
+        return ($plan === 'pro' || $plan === 'premium') && version_compare($version, '5.0.0', '>=');
     }
 }
