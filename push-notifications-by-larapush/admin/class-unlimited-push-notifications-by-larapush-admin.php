@@ -178,7 +178,7 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
     /**
      * Connect to LaraPush Panel, save options and redirect back to settings page.
      *
-     * @since 1.0.0
+     * @since 1.0.7
      */
     public function larapush_connect()
     {
@@ -279,16 +279,16 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
             isset($_POST['unlimited_push_notifications_by_larapush_enable_push_notifications']) ? 1 : 0
         );
 
+        update_option(
+            'unlimited_push_notifications_by_larapush_push_on_publish',
+            isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish']) ? 1 : 0
+        );
+
         if (!Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPushOnPublishDelay()) {
             // If user doesn't have access, force these options to be disabled
-            update_option('unlimited_push_notifications_by_larapush_push_on_publish', 0);
             update_option('unlimited_push_notifications_by_larapush_push_on_publish_delay', 0);
             update_option('unlimited_push_notifications_by_larapush_push_on_publish_for_webstories', 0);
         } else {
-            update_option(
-                'unlimited_push_notifications_by_larapush_push_on_publish',
-                isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish']) ? 1 : 0
-            );
             update_option(
                 'unlimited_push_notifications_by_larapush_push_on_publish_delay',
                 isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish_delay'])
@@ -373,7 +373,7 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
     /**
      * Call when post or page status is changed
      *
-     * @since    1.0.3
+     * @since  1.0.7
      */
     public function post_page_status_changed($new_status, $old_status, $post)
     {
@@ -385,15 +385,13 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
             return;
         }
 
-        if (!Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPushOnPublishDelay()) {
-            return;
-        }
+        $isPushOnPublishDelayEnabled = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPushOnPublishDelay();
 
         if ($new_status == 'publish') {
             if ($post->post_type == 'post') {
                 if (get_option('unlimited_push_notifications_by_larapush_push_on_publish', false)) {
                     $delay = get_option('unlimited_push_notifications_by_larapush_push_on_publish_delay', 0);
-                    if ($delay > 0) {
+                    if ($delay > 0 && $isPushOnPublishDelayEnabled) {
                         wp_schedule_single_event(
                             time() + $delay * 60,
                             'unlimited_push_notifications_by_larapush_send_scheduled_notification',

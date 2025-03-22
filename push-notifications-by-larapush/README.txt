@@ -5,7 +5,7 @@ Tags: larapush, push notifications, self hosted, unlimited subscribers, AMP, web
 Requires at least: 4.7
 Requires PHP: 7.0
 Tested up to: 6.7.1
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ Yes, you can easily integrate "Unlimited Push Notifications By LaraPush" with yo
 However you will need to have a larapush pro panel installed on your server.
 
 == Changelog ==
+
+= 1.0.7 =
+* Fixed a Push on Publish Bug
 
 = 1.0.6 =
 * Now Compatible with LaraPush Premium
