@@ -328,7 +328,7 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
         }
 
         // Get site url
-        $site_url = str_replace(['http://', 'https://'], '', get_site_url());
+        $site_url = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::getDomain();
 
         // Authenticate to LaraPush Panel
         $panel_url = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::assambleUrl($url, $url_path);
@@ -385,6 +385,8 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
 
                 update_option('unlimited_push_notifications_by_larapush_js_filenames_for_site', $file_names);
 
+                $codes = [];
+
                 // Writing javascript files
                 $js_filename = $body->data->integration->integrationCode->js_code_filename ?? null;
                 $js_code = $body->data->integration->integrationCode->js_code ?? null;
@@ -399,6 +401,9 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
                 if ($sw_filename && $sw_code) {
                     $sw_file = ABSPATH . $sw_filename;
                     file_put_contents($sw_file, $sw_code);
+                    $codes = array_merge($codes, [
+                        'sw_filename' => $sw_filename
+                    ]);
                 }
 
                 // Getting WEB Header code URLs and data
@@ -424,9 +429,9 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
                     ]);
                 }
 
-                $codes = [
+                $codes = array_merge($codes, [
                     'code_to_be_added_in_header_data' => $code_to_be_added_in_header_data
-                ];
+                ]);
 
                 if (isset($body->data->integration->ampIntegrationCode)) {
                     // Writing helper frame file
@@ -710,6 +715,27 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
     }
 
     /**
+     * Checks if firebase messaging file is present in root of the website
+     * 
+     * @return bool
+     * @since 1.0.8
+     */
+    public static function isFirebaseMessagingFilePresent()
+    {
+        try {
+            $codes = get_option('unlimited_push_notifications_by_larapush_codes', []);
+            $filename = isset($codes['sw_filename']) && $codes['sw_filename'] ? $codes['sw_filename'] : 'firebase-messaging-sw.js';
+
+            $domain = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::getDomain();
+            $url = 'https://' . $domain . '/' . $filename;
+            $response = wp_remote_get($url);
+            return $response['response']['code'] === 200;
+        } catch (\Throwable $error) {
+            return true;
+        }
+    }
+
+    /**
      * Checks if the user can show the push on publish delay
      *
      * @return bool
@@ -722,5 +748,40 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
         $version = get_option('unlimited_push_notifications_by_larapush_panel_version', '1.0.0');
 
         return ($plan === 'pro' || $plan === 'premium') && version_compare($version, '5.0.0', '>=');
+    }
+
+    /**
+     * Checks if the current installation is a subdirectory installation & if the panel is 5.0.0 or higher
+     * 
+     * @return bool
+     * @since 1.0.8
+     */
+    public static function isSubdirectoryInstallation()
+    {
+        $version = get_option('unlimited_push_notifications_by_larapush_panel_version', '1.0.0');
+        if (version_compare($version, '5.0.0', '<')) {
+            return false;
+        }
+
+        $parsed_url = parse_url(get_site_url());
+        return isset($parsed_url['path']) && $parsed_url['path'] !== '/';
+    }
+    
+    /**
+     * Gets the main domain from a URL
+     * 
+     * @param string $url
+     * @return string
+     * @since 1.0.8
+     */
+    public static function getDomain()
+    {
+        if (self::isSubdirectoryInstallation()) {
+            $parsed_url = parse_url(get_site_url());
+            $host = $parsed_url['host'];
+            return $host;
+        }
+
+        return str_replace(['https://', 'http://'], '', get_site_url());
     }
 }

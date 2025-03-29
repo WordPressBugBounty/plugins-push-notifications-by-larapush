@@ -15,11 +15,21 @@ if (!defined('ABSPATH')) {
  * @subpackage Unlimited_Push_Notifications_By_Larapush/admin/partials
  */
 
+$firebase_messaging_download_alert = false;
 try {
     $connection = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::checkConnection();
     if ($connection) {
         $campaignFilter = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::getCampaignFilter();
         $integration_done = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::codeIntegration();
+
+        if(Unlimited_Push_Notifications_By_Larapush_Admin_Helper::isSubdirectoryInstallation()) {
+            $firebase_messaging_download_alert = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::isFirebaseMessagingFilePresent() == false;
+
+            if($firebase_messaging_download_alert) {
+                $integration_done = false;
+            }
+        }
+
         update_option('unlimited_push_notifications_by_larapush_panel_integration_tried', true);
     } else {
         $campaignFilter = false;
@@ -34,6 +44,12 @@ $push_on_publish_delay = get_option('unlimited_push_notifications_by_larapush_pu
 <div class="wrap">
     <div>
         <h1>Connect LaraPush</h1>
+        <?php if ($firebase_messaging_download_alert) { ?>
+            <div class="notice notice-error">
+                <p>Firebase Messaging file is not present on the root of your website. <strong>Please download it from <a href="<?php echo get_site_url(); ?>/firebase-messaging-sw.js" target="_blank" download>here</a></strong> and place it in the root of your main website that is <strong>https://<?php echo Unlimited_Push_Notifications_By_Larapush_Admin_Helper::getDomain(); ?></strong>.</strong></p>
+                <button type="button" class="button button-primary" onclick="window.location.reload();" style="margin-bottom: 10px;">Check Now</button>
+            </div>
+        <?php } ?>
         <p>Send unlimited push notifications to your users directly from WordPress.</p>
         <?php settings_errors('unlimited-push-notifications-by-larapush-settings'); ?>
         <?php if (isset($error)) { ?>
