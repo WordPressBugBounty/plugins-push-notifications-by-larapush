@@ -69,6 +69,10 @@ class Unlimited_Push_Notifications_By_Larapush_Public
                 ) {
                     $script_url = $code['code_to_be_added_in_header_data']['script_url'];
                     $additional_js_code = $code['code_to_be_added_in_header_data']['additional_js_code'] ?? '';
+                    $pwa_header_code = $code['code_to_be_added_in_header_data']['pwa_header_code'] ?? '';
+
+                    // If PWA is enabled
+                    $pwa_ios_enabled = get_option('unlimited_push_notifications_by_larapush_configure_pwa_ios', false);
 
                     include_once plugin_dir_path(__FILE__) . 'partials/web-header.php';
                 }

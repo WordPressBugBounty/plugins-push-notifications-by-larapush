@@ -334,6 +334,11 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
             update_option('unlimited_push_notifications_by_larapush_amp_code_location', $amp_code_location);
         }
 
+        update_option(
+            'unlimited_push_notifications_by_larapush_configure_pwa_ios',
+            isset($_POST['unlimited_push_notifications_by_larapush_configure_pwa_ios']) ? 1 : 0
+        );
+
         // Redirect to settings page
         wp_redirect(admin_url('admin.php?page=unlimited-push-notifications-by-larapush-settings'));
         exit();

@@ -423,6 +423,67 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
                 } else {
                     $code_to_be_added_in_header_data = [];
                 }
+
+                // Check if PWA iOS is enabled and save manifest.json file
+                $pwa_ios_enabled = get_option('unlimited_push_notifications_by_larapush_configure_pwa_ios', false);
+                if ($pwa_ios_enabled) {
+                    // Save manifest.json file
+                    $manifest_data = $body->data->integration->manifest ?? null;
+                    if ($manifest_data) {
+                        // Get site icon URL for 512x512 size
+                        $site_icon_url = get_site_icon_url(512);
+
+                        // If no site icon, use plugin's default icon
+                        if (!$site_icon_url) {
+                            // Get the plugin's base URL
+                            $plugin_url = plugin_dir_url(dirname(__FILE__));
+                            $site_icon_url = $plugin_url . 'public/images/website-default-icon.png';
+                        }
+
+                        // Get site name and URL
+                        $site_name = get_bloginfo('name');
+                        $site_url = get_site_url();
+
+                        // Update manifest data with site-specific values
+                        $manifest_data->name = $site_name;
+                        $manifest_data->short_name = $site_name;
+                        $manifest_data->start_url = $site_url;
+                        $manifest_data->icons = [
+                            [
+                                'src' => $site_icon_url,
+                                'sizes' => '512x512',
+                                'type' => 'image/png'
+                            ]
+                        ];
+
+                        $manifest_file = ABSPATH . 'manifest.json';
+                        // Use JSON_UNESCAPED_SLASHES to prevent escaping of forward slashes
+                        file_put_contents(
+                            $manifest_file,
+                            json_encode($manifest_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+                        );
+
+                        // Add PWA header code to the code_to_be_added_in_header_data
+                        $pwa_header_code =
+                            $body->data->integration->pwaIntegrationCode->header_additional_js_code ?? '';
+                        if ($pwa_header_code) {
+                            $code_to_be_added_in_header_data['pwa_header_code'] = $pwa_header_code;
+                        }
+                    }
+                } else {
+                    // Clean up PWA resources if disabled
+                    // Remove manifest.json file if it exists
+                    $manifest_file = ABSPATH . 'manifest.json';
+                    if (file_exists($manifest_file)) {
+                        unlink($manifest_file);
+                    }
+
+                    // Remove PWA header code from the code_to_be_added_in_header_data if it exists
+                    if (isset($code_to_be_added_in_header_data['pwa_header_code'])) {
+                        unset($code_to_be_added_in_header_data['pwa_header_code']);
+                    }
+                }
+
                 if ($header_additional_js_code) {
                     $code_to_be_added_in_header_data = array_merge($code_to_be_added_in_header_data, [
                         'additional_js_code' => $header_additional_js_code
@@ -716,7 +777,7 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
 
     /**
      * Checks if firebase messaging file is present in root of the website
-     * 
+     *
      * @return bool
      * @since 1.0.8
      */
@@ -724,7 +785,10 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
     {
         try {
             $codes = get_option('unlimited_push_notifications_by_larapush_codes', []);
-            $filename = isset($codes['sw_filename']) && $codes['sw_filename'] ? $codes['sw_filename'] : 'firebase-messaging-sw.js';
+            $filename =
+                isset($codes['sw_filename']) && $codes['sw_filename']
+                    ? $codes['sw_filename']
+                    : 'firebase-messaging-sw.js';
 
             $domain = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::getDomain();
             $url = 'https://' . $domain . '/' . $filename;
@@ -751,8 +815,22 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
     }
 
     /**
+     * Checks if the user can show the PWA iOS configuration
+     *
+     * @return bool
+     *
+     * @since 1.0.9
+     */
+    public static function canShowPWAiOS()
+    {
+        $version = get_option('unlimited_push_notifications_by_larapush_panel_version', '1.0.0');
+
+        return version_compare($version, '5.1.9', '>=');
+    }
+
+    /**
      * Checks if the current installation is a subdirectory installation & if the panel is 5.0.0 or higher
-     * 
+     *
      * @return bool
      * @since 1.0.8
      */
@@ -766,10 +844,10 @@ class Unlimited_Push_Notifications_By_Larapush_Admin_Helper
         $parsed_url = parse_url(get_site_url());
         return isset($parsed_url['path']) && $parsed_url['path'] !== '/';
     }
-    
+
     /**
      * Gets the main domain from a URL
-     * 
+     *
      * @param string $url
      * @return string
      * @since 1.0.8

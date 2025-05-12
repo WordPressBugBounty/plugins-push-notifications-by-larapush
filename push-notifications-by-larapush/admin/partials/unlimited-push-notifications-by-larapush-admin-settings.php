@@ -22,10 +22,11 @@ try {
         $campaignFilter = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::getCampaignFilter();
         $integration_done = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::codeIntegration();
 
-        if(Unlimited_Push_Notifications_By_Larapush_Admin_Helper::isSubdirectoryInstallation()) {
-            $firebase_messaging_download_alert = Unlimited_Push_Notifications_By_Larapush_Admin_Helper::isFirebaseMessagingFilePresent() == false;
+        if (Unlimited_Push_Notifications_By_Larapush_Admin_Helper::isSubdirectoryInstallation()) {
+            $firebase_messaging_download_alert =
+                Unlimited_Push_Notifications_By_Larapush_Admin_Helper::isFirebaseMessagingFilePresent() == false;
 
-            if($firebase_messaging_download_alert) {
+            if ($firebase_messaging_download_alert) {
                 $integration_done = false;
             }
         }
@@ -118,6 +119,20 @@ $push_on_publish_delay = get_option('unlimited_push_notifications_by_larapush_pu
                         true
                     ); ?> /></td>
                 </tr>
+                <?php if (
+                    $campaignFilter == true &&
+                    Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPWAiOS()
+                ): ?>
+                <tr valign="top">
+                    <th scope="row">Configure PWA for iOS</th>
+                    <td><input type="checkbox" name="unlimited_push_notifications_by_larapush_configure_pwa_ios" value="1" <?php checked(
+                        1,
+                        get_option('unlimited_push_notifications_by_larapush_configure_pwa_ios', 0),
+                        true
+                    ); ?> />
+                    <p class="description">Enable PWA configuration for iOS devices.</p></td>
+                </tr>
+                <?php endif; ?>
                 <tr valign="top">
                     <th scope="row">Who can send notifications</th>
                     <td>
