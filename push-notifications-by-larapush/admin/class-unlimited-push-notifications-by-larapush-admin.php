@@ -178,7 +178,7 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
     /**
      * Connect to LaraPush Panel, save options and redirect back to settings page.
      *
-     * @since 1.0.7
+     * @since 1.0.10
      */
     public function larapush_connect()
     {
@@ -281,7 +281,11 @@ class Unlimited_Push_Notifications_By_Larapush_Admin
 
         update_option(
             'unlimited_push_notifications_by_larapush_push_on_publish',
-            isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish']) ? 1 : 0
+            isset($_POST['unlimited_push_notifications_by_larapush_push_on_publish'])
+                ? ($_POST['unlimited_push_notifications_by_larapush_push_on_publish'] == 0
+                    ? 0
+                    : 1)
+                : 0
         );
 
         if (!Unlimited_Push_Notifications_By_Larapush_Admin_Helper::canShowPushOnPublishDelay()) {

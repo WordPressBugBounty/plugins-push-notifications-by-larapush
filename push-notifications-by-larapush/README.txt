@@ -4,8 +4,8 @@ Donate link: [LaraPush.com](https://larapush.com/ "Self hosted Push Notification
 Tags: larapush, push notifications, self hosted, unlimited subscribers, AMP, web push notifications
 Requires at least: 4.7
 Requires PHP: 7.0
-Tested up to: 6.7.1
-Stable tag: 1.0.9
+Tested up to: 6.8.1
+Stable tag: 1.0.10
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ Yes, you can easily integrate "Unlimited Push Notifications By LaraPush" with yo
 However you will need to have a larapush pro panel installed on your server.
 
 == Changelog ==
+
+= 1.0.10 =
+* Push on Publish Bug Fixed
 
 = 1.0.9 =
 * Integrated iOS PWA support
